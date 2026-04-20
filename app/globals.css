@@ -1,0 +1,238 @@
+@import "tailwindcss";
+
+/* ============================================================
+   DESIGN TOKENS
+   ============================================================ */
+:root {
+  /* Background layers */
+  --bg-canvas:     #0a0a0f;
+  --bg-base:       #0d0d15;
+  --bg-surface:    #12121e;
+  --bg-elevated:   #1a1a2e;
+  --bg-overlay:    #1f1f35;
+
+  /* Brand purple */
+  --purple-50:     #f3eeff;
+  --purple-100:    #e4d4ff;
+  --purple-200:    #c8a8ff;
+  --purple-300:    #a970ff;
+  --purple-400:    #8b40ff;
+  --purple-500:    #7c3aed;
+  --purple-600:    #6d28d9;
+  --purple-700:    #5b21b6;
+  --purple-glow:   rgba(124, 58, 237, 0.4);
+  --purple-glow-sm: rgba(124, 58, 237, 0.15);
+
+  /* Text */
+  --text-primary:   #f0f0ff;
+  --text-secondary: #a0a0c0;
+  --text-muted:     #5a5a7a;
+  --text-disabled:  #3a3a55;
+
+  /* Borders */
+  --border-subtle:  rgba(255, 255, 255, 0.06);
+  --border-default: rgba(255, 255, 255, 0.10);
+  --border-strong:  rgba(255, 255, 255, 0.18);
+  --border-purple:  rgba(124, 58, 237, 0.5);
+
+  /* Status colors */
+  --status-success: #22c55e;
+  --status-failed:  #ef4444;
+  --status-running: #f59e0b;
+  --status-skipped: #6b7280;
+  --status-pending: #8b5cf6;
+
+  /* Node type colors */
+  --node-text:    #3b82f6;
+  --node-image:   #10b981;
+  --node-video:   #f59e0b;
+  --node-llm:     #8b5cf6;
+  --node-crop:    #06b6d4;
+  --node-frame:   #f97316;
+
+  /* Sidebar widths */
+  --sidebar-left:  260px;
+  --sidebar-right: 300px;
+}
+
+/* ============================================================
+   GOOGLE FONTS (loaded via @font-face via CSS layer after tokens)
+   ============================================================ */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url('https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hiJ-Ek-_EeA.woff2') format('woff2');
+}
+
+/* ============================================================
+   GLOBAL RESET
+   ============================================================ */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  background-color: var(--bg-canvas);
+  color: var(--text-primary);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ============================================================
+   REACT FLOW CANVAS OVERRIDES
+   ============================================================ */
+.react-flow {
+  background-color: var(--bg-canvas) !important;
+}
+
+.react-flow__background {
+  background-color: var(--bg-canvas) !important;
+}
+
+.react-flow__background pattern circle {
+  fill: rgba(255, 255, 255, 0.12) !important;
+}
+
+.react-flow__controls {
+  background: var(--bg-surface) !important;
+  border: 1px solid var(--border-default) !important;
+  border-radius: 10px !important;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4) !important;
+}
+
+.react-flow__controls-button {
+  background: transparent !important;
+  border: none !important;
+  border-bottom: 1px solid var(--border-subtle) !important;
+  color: var(--text-secondary) !important;
+  transition: background 0.15s, color 0.15s;
+}
+
+.react-flow__controls-button:hover {
+  background: var(--bg-elevated) !important;
+  color: var(--text-primary) !important;
+}
+
+.react-flow__controls-button:last-child {
+  border-bottom: none !important;
+}
+
+.react-flow__minimap {
+  background: var(--bg-surface) !important;
+  border: 1px solid var(--border-default) !important;
+  border-radius: 10px !important;
+}
+
+.react-flow__connection-line {
+  stroke: var(--purple-400) !important;
+  stroke-width: 2px !important;
+}
+
+.react-flow__handle {
+  width: 10px !important;
+  height: 10px !important;
+  border: 2px solid var(--bg-surface) !important;
+  border-radius: 50% !important;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.react-flow__handle:hover {
+  transform: scale(1.4) !important;
+}
+
+.react-flow__handle[data-handletype="text"]  { background: var(--node-text)  !important; }
+.react-flow__handle[data-handletype="image"] { background: var(--node-image) !important; }
+.react-flow__handle[data-handletype="video"] { background: var(--node-video) !important; }
+
+.react-flow__selection {
+  background: rgba(124, 58, 237, 0.08) !important;
+  border: 1px solid var(--purple-500) !important;
+  border-radius: 4px;
+}
+
+/* ============================================================
+   NODE ANIMATIONS
+   ============================================================ */
+@keyframes nodeGlow {
+  0%, 100% {
+    box-shadow:
+      0 0 0 0 var(--purple-glow),
+      0 4px 24px rgba(0,0,0,0.5);
+  }
+  50% {
+    box-shadow:
+      0 0 0 6px var(--purple-glow),
+      0 0 40px var(--purple-glow),
+      0 4px 24px rgba(0,0,0,0.5);
+  }
+}
+
+@keyframes pulseRing {
+  0% { transform: scale(1); opacity: 0.8; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+
+@keyframes edgeFlow {
+  from { stroke-dashoffset: 24; }
+  to   { stroke-dashoffset: 0; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(16px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* ============================================================
+   CUSTOM SCROLLBAR
+   ============================================================ */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* ============================================================
+   UTILITY CLASSES
+   ============================================================ */
+.font-mono { font-family: 'JetBrains Mono', 'Fira Code', monospace; }
+
+.glass {
+  background: rgba(18, 18, 30, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.truncate-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.animate-fade-in { animation: fadeIn 0.2s ease forwards; }
+.animate-slide-in { animation: slideInRight 0.2s ease forwards; }
+
+/* ============================================================
+   UPPY DASHBOARD OVERRIDES
+   ============================================================ */
+.uppy-Dashboard-inner {
+  background: var(--bg-surface) !important;
+  border-color: var(--border-default) !important;
+  border-radius: 12px !important;
+}
+.uppy-Dashboard-AddFiles { background: transparent !important; color: var(--text-secondary) !important; }
+.uppy-Dashboard-AddFiles-title { color: var(--text-primary) !important; }
+.uppy-DashboardContent-bar { background: var(--bg-elevated) !important; border-bottom-color: var(--border-subtle) !important; }

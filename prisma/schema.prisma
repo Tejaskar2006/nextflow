@@ -1,0 +1,159 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================================
+// USER
+// Synced from Clerk via webhook. id = Clerk userId.
+// ============================================================
+model User {
+  id        String   @id // Clerk userId (e.g. "user_abc123")
+  email     String   @unique
+  name      String?
+  imageUrl  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  workflows     Workflow[]
+  workflowRuns  WorkflowRun[]
+
+  @@map("users")
+}
+
+// ============================================================
+// WORKFLOW
+// Canvas nodes/edges stored as JSON to avoid schema churn.
+// ============================================================
+model Workflow {
+  id          String   @id @default(cuid())
+  userId      String
+  name        String   @default("Untitled Workflow")
+  description String?
+  thumbnail   String?  // URL to thumbnail image
+  isPublic    Boolean  @default(false)
+  
+  // Serialized React Flow state
+  nodes       Json     @default("[]")
+  edges       Json     @default("[]")
+  viewport    Json     @default("{\"x\":0,\"y\":0,\"zoom\":1}")
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workflowRuns WorkflowRun[]
+
+  @@index([userId])
+  @@map("workflows")
+}
+
+// ============================================================
+// WORKFLOW RUN
+// One record per execution of a workflow.
+// ============================================================
+model WorkflowRun {
+  id          String          @id @default(cuid())
+  workflowId  String
+  userId      String
+  
+  status      WorkflowRunStatus @default(PENDING)
+  scope       ExecutionScope    @default(FULL)
+  
+  // IDs of nodes that were part of this run (for SELECTED scope)
+  scopedNodeIds Json           @default("[]")
+  
+  // Trigger.dev run handle for real-time status
+  triggerRunId String?
+  
+  startedAt   DateTime        @default(now())
+  completedAt DateTime?
+  durationMs  Int?            // milliseconds
+  
+  // Top-level error message if workflow failed catastrophically
+  error       String?
+
+  workflow    Workflow    @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  nodeRuns    NodeRun[]
+
+  @@index([workflowId])
+  @@index([userId])
+  @@map("workflow_runs")
+}
+
+// ============================================================
+// NODE RUN
+// One record per node execution within a WorkflowRun.
+// ============================================================
+model NodeRun {
+  id            String        @id @default(cuid())
+  workflowRunId String
+  
+  // The React Flow node ID (e.g. "node_abc123")
+  nodeId        String
+  nodeType      NodeType
+  nodeLabel     String?
+  
+  status        NodeRunStatus @default(PENDING)
+  
+  // Full input/output payloads (typed by node)
+  inputs        Json          @default("{}")
+  outputs       Json          @default("{}")
+  
+  // Trigger.dev task run ID for this specific node
+  triggerTaskId String?
+  
+  startedAt     DateTime      @default(now())
+  completedAt   DateTime?
+  durationMs    Int?
+  
+  error         String?
+  errorStack    String?
+
+  workflowRun   WorkflowRun @relation(fields: [workflowRunId], references: [id], onDelete: Cascade)
+
+  @@index([workflowRunId])
+  @@index([nodeId])
+  @@map("node_runs")
+}
+
+// ============================================================
+// ENUMS
+// ============================================================
+enum WorkflowRunStatus {
+  PENDING
+  RUNNING
+  SUCCESS
+  FAILED
+  PARTIAL   // some nodes succeeded, some failed
+}
+
+enum ExecutionScope {
+  FULL      // Run entire workflow
+  SINGLE    // Run one specific node
+  SELECTED  // Run selected subset of nodes
+}
+
+enum NodeRunStatus {
+  PENDING
+  RUNNING
+  SUCCESS
+  FAILED
+  SKIPPED   // upstream dependency failed
+}
+
+enum NodeType {
+  TEXT
+  UPLOAD_IMAGE
+  UPLOAD_VIDEO
+  LLM
+  CROP_IMAGE
+  EXTRACT_FRAME
+}

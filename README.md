@@ -1,36 +1,118 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# NextFlow
 
-## Getting Started
+> Production-ready visual LLM workflow builder — a Krea.ai-inspired SaaS built with Next.js 14, React Flow, Trigger.dev, and Gemini.
 
-First, run the development server:
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Framework | Next.js 14 App Router (TypeScript strict) |
+| Canvas | React Flow (`@xyflow/react`) |
+| State | Zustand + Immer |
+| Auth | Clerk |
+| Database | Prisma + Neon PostgreSQL |
+| Async Tasks | Trigger.dev v3 |
+| File Uploads | Transloadit + Uppy |
+| LLM | Google Gemini (`@google/generative-ai`) |
+| FFmpeg | fluent-ffmpeg (via Trigger.dev) |
+| Styling | Vanilla CSS with design tokens |
+
+## Node Types
+
+| Node | Input | Output | Async |
+|---|---|---|---|
+| Text | — | `text` | No |
+| Upload Image | — | `image` | No (client-side) |
+| Upload Video | — | `video` | No (client-side) |
+| LLM (Gemini) | `text`, `image[]` | `text` | Yes (Trigger.dev) |
+| Crop Image | `image` | `image` | Yes (FFmpeg) |
+| Extract Frame | `video` | `image` | Yes (FFmpeg) |
+
+## Setup
+
+### 1. Clone + Install
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cd nextflow
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Configure Environment
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+cp .env.example .env.local
+# Fill in all values (Neon, Clerk, Trigger.dev, Transloadit, Google AI)
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 3. Database
 
-## Learn More
+```bash
+npx prisma migrate dev --name init
+npx prisma generate
+```
 
-To learn more about Next.js, take a look at the following resources:
+### 4. Run (two terminals)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+# Terminal 1 — Next.js
+npm run dev
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+# Terminal 2 — Trigger.dev worker
+npx trigger.dev@latest dev
+```
 
-## Deploy on Vercel
+### 5. Seed Sample Workflow (optional)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+npx ts-node --compiler-options '{"module":"CommonJS"}' prisma/seed.ts
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Deployment
+
+### Vercel (Next.js)
+
+```bash
+vercel --prod
+```
+
+Add all environment variables from `.env.example` to Vercel project settings.
+
+### Trigger.dev (Worker)
+
+```bash
+npx trigger.dev@latest deploy
+```
+
+### Database Migration (Production)
+
+```bash
+DATABASE_URL="your_neon_url" npx prisma migrate deploy
+```
+
+## Architecture
+
+```
+Left Sidebar          Canvas (React Flow)         Right Sidebar
+────────────          ──────────────────         ─────────────
+Node Library    →   DAG Builder + Editor   →   Run History
+6 node types        Type-safe connections       Node breakdown
+Drag to canvas      Undo/redo (50 deep)         Inputs/outputs
+                    Auto-save (1.5s)            Error details
+                    Parallel execution
+```
+
+## DAG Execution
+
+- Kahn's topological sort detects cycles at connection time
+- Independent branches execute in `Promise.allSettled` (parallel)
+- Failed upstream nodes mark downstream as SKIPPED
+- All async nodes dispatch to Trigger.dev (never blocks the API)
+- WorkflowRun + NodeRun records persisted in PostgreSQL
+
+## Sample Workflow
+
+**Product Marketing Kit Generator** (`prisma/seed.ts`):
+- Branch A: Text → LLM (copy generation)
+- Branch B: Image → Crop → LLM (visual analysis)
+- Branch C: Video → ExtractFrame → LLM (frame analysis)
+- All branches converge to a final Text node
