@@ -90,22 +90,51 @@ export const UploadVideoNode = memo(function UploadVideoNode({ id, data, selecte
         selected={selected} minWidth={240}
       >
         {data.uploadedUrl ? (
-          <div>
+          <div style={{ position: "relative", borderRadius: 10, overflow: "hidden", border: "1px solid rgba(245,158,11,0.2)", boxShadow: "0 4px 12px rgba(0,0,0,0.2)" }}>
             <video
               src={data.uploadedUrl}
               controls
-              style={{ width: "100%", height: 130, objectFit: "cover", borderRadius: 8, display: "block", background: "#000" }}
+              style={{ width: "100%", height: 150, objectFit: "cover", display: "block", background: "#000" }}
             />
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 6 }}>
-              <span style={{ fontSize: 10, color: "var(--text-muted)" }}>
-                {data.uploadedFileName}
-                {data.durationSeconds && ` · ${data.durationSeconds.toFixed(1)}s`}
+            
+            {/* Top action button */}
+            <button
+              id={`node-${id}-clear`}
+              onClick={() => updateNodeData<UploadVideoNodeType>(id, { uploadedUrl: undefined, uploadedFileName: undefined })}
+              style={{
+                position: "absolute", top: 8, right: 8, width: 26, height: 26,
+                borderRadius: "50%", background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)",
+                border: "1px solid rgba(255,255,255,0.2)",
+                color: "#fff", fontSize: 14, cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                transition: "all 0.2s", zIndex: 10
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(239,68,68,0.8)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(0,0,0,0.4)"; }}
+            >✕</button>
+
+            {/* Bottom Metadata Bar */}
+            <div style={{
+              position: "absolute", bottom: 0, left: 0, right: 0,
+              padding: "6px 10px", background: "rgba(0,0,0,0.5)", backdropFilter: "blur(6px)",
+              display: "flex", justifyContent: "space-between", alignItems: "center",
+              pointerEvents: "none"
+            }}>
+              <span style={{ fontSize: 10, color: "#fff", fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "60%" }}>
+                {data.uploadedFileName || "Uploaded video"}
               </span>
-              <button
-                id={`node-${id}-clear`}
-                onClick={() => updateNodeData<UploadVideoNodeType>(id, { uploadedUrl: undefined })}
-                style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: 12 }}
-              >✕</button>
+              <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                {data.durationSeconds && (
+                  <span style={{ fontSize: 9, color: "#fbbf24", fontWeight: 600, background: "rgba(245,158,11,0.2)", padding: "1px 4px", borderRadius: 4 }}>
+                    {data.durationSeconds.toFixed(1)}s
+                  </span>
+                )}
+                {data.uploadedFileSizeBytes && (
+                  <span style={{ fontSize: 9, color: "rgba(255,255,255,0.7)" }}>
+                    {(data.uploadedFileSizeBytes / (1024 * 1024)).toFixed(1)} MB
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         ) : (

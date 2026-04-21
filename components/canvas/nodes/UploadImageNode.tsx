@@ -90,27 +90,50 @@ export const UploadImageNode = memo(function UploadImageNode({ id, data, selecte
         selected={selected} minWidth={240}
       >
         {data.uploadedUrl ? (
-          /* Preview */
-          <div style={{ position: "relative" }}>
+          <div style={{ position: "relative", borderRadius: 10, overflow: "hidden", border: "1px solid var(--node-image-dim, rgba(16,185,129,0.2))" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={data.uploadedUrl}
               alt={data.uploadedFileName ?? "Uploaded image"}
-              style={{ width: "100%", height: 130, objectFit: "cover", borderRadius: 8, display: "block" }}
+              style={{ width: "100%", height: 150, objectFit: "cover", display: "block" }}
             />
+            
+            {/* Action overlay */}
+            <div style={{
+              position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
+              background: "linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, transparent 40%, transparent 60%, rgba(0,0,0,0.6) 100%)",
+              pointerEvents: "none"
+            }} />
+
             <button
               id={`node-${id}-clear`}
               onClick={() => updateNodeData<UploadImageNodeType>(id, { uploadedUrl: undefined, uploadedFileName: undefined })}
               style={{
-                position: "absolute", top: 6, right: 6, width: 22, height: 22,
-                borderRadius: "50%", background: "rgba(0,0,0,0.7)", border: "none",
-                color: "#fff", fontSize: 12, cursor: "pointer",
+                position: "absolute", top: 8, right: 8, width: 26, height: 26,
+                borderRadius: "50%", background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)",
+                border: "1px solid rgba(255,255,255,0.2)",
+                color: "#fff", fontSize: 14, cursor: "pointer",
                 display: "flex", alignItems: "center", justifyContent: "center",
+                pointerEvents: "auto", transition: "all 0.2s"
               }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(239,68,68,0.8)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(0,0,0,0.4)"; }}
             >✕</button>
-            <div style={{ marginTop: 6, fontSize: 10, color: "var(--text-muted)" }}>
-              {data.uploadedFileName}
-              {data.uploadedFileSizeBytes && ` · ${(data.uploadedFileSizeBytes / 1024).toFixed(0)} KB`}
+
+            {/* Metadata Bar */}
+            <div style={{
+              position: "absolute", bottom: 0, left: 0, right: 0,
+              padding: "6px 10px", background: "rgba(0,0,0,0.5)", backdropFilter: "blur(6px)",
+              display: "flex", justifyContent: "space-between", alignItems: "center",
+            }}>
+              <span style={{ fontSize: 10, color: "#fff", fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "70%" }}>
+                {data.uploadedFileName || "Uploaded image"}
+              </span>
+              {data.uploadedFileSizeBytes && (
+                <span style={{ fontSize: 9, color: "rgba(255,255,255,0.7)" }}>
+                  {(data.uploadedFileSizeBytes / 1024).toFixed(0)} KB
+                </span>
+              )}
             </div>
           </div>
         ) : (
