@@ -1,28 +1,7 @@
 {
-  "buildCommand": "prisma generate && prisma migrate deploy && next build",
+  "buildCommand": "prisma generate && next build",
   "outputDirectory": ".next",
   "installCommand": "npm install",
   "framework": "nextjs",
-  "regions": ["iad1"],
-  "env": {
-    "DATABASE_URL": "@database-url",
-    "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY": "@clerk-publishable-key",
-    "CLERK_SECRET_KEY": "@clerk-secret-key",
-    "NEXT_PUBLIC_CLERK_SIGN_IN_URL": "/sign-in",
-    "NEXT_PUBLIC_CLERK_SIGN_UP_URL": "/sign-up",
-    "NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL": "/dashboard",
-    "NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL": "/dashboard",
-    "TRIGGER_SECRET_KEY": "@trigger-secret-key",
-    "TRIGGER_PROJECT_ID": "@trigger-project-id",
-    "TRANSLOADIT_KEY": "@transloadit-key",
-    "TRANSLOADIT_SECRET": "@transloadit-secret",
-    "TRANSLOADIT_IMAGE_TEMPLATE_ID": "@transloadit-image-template-id",
-    "TRANSLOADIT_VIDEO_TEMPLATE_ID": "@transloadit-video-template-id",
-    "GOOGLE_GENERATIVE_AI_API_KEY": "@google-ai-api-key",
-    "NEXT_PUBLIC_APP_URL": "@app-url",
-    "NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME": "@cloudinary-cloud-name",
-    "CLOUDINARY_API_KEY": "@cloudinary-api-key",
-    "CLOUDINARY_API_SECRET": "@cloudinary-api-secret",
-    "TRIGGER_API_URL": "https://api.trigger.dev"
-  }
+  "regions": ["iad1"]
 }

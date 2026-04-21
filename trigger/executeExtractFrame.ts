@@ -13,19 +13,15 @@ import ffmpeg from "fluent-ffmpeg";
 import { uploadToCloudinary } from "@/lib/cloudinary";
 
 // ────────────────────────────────────────────────────────────
-// Ensure FFmpeg binary path is robust for Windows/Trigger.dev build
+// Ensure FFmpeg binary path is robust for Windows/Linux/Trigger.dev build
 // ────────────────────────────────────────────────────────────
 try {
-  const ffmpegRawPath = require.resolve("ffmpeg-static");
-  const ffmpegDir = path.dirname(ffmpegRawPath);
-  const ffmpegPath = path.join(ffmpegDir, "ffmpeg.exe");
+  const ffmpegStatic = require("ffmpeg-static");
+  const ffmpegPath = typeof ffmpegStatic === "string" ? ffmpegStatic : require.resolve("ffmpeg-static");
   ffmpeg.setFfmpegPath(ffmpegPath);
-  logger.log(`[FFMPEG] Resolved binary via require.resolve: ${ffmpegPath}`);
+  logger.log(`[FFMPEG] Resolved binary: ${ffmpegPath}`);
 } catch (e) {
-  // Hardcoded fallback for your specific machine as a last resort
-  const fallbackPath = "D:\\Galaxy.ai\\nextflow\\node_modules\\ffmpeg-static\\ffmpeg.exe";
-  ffmpeg.setFfmpegPath(fallbackPath);
-  logger.log(`[FFMPEG] require.resolve failed, using fallback: ${fallbackPath}`);
+  logger.error("[FFMPEG] Failed to resolve ffmpeg-static. Ensure it is in dependencies.", { error: String(e) });
 }
 
 
