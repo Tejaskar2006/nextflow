@@ -15,6 +15,10 @@ interface RouteContext {
 const executeSchema = z.object({
   scope: z.enum(["FULL", "SINGLE", "SELECTED"]).default("FULL"),
   selectedNodeIds: z.array(z.string()).optional().default([]),
+  nodeSnapshot: z.object({
+    nodes: z.array(z.record(z.string(), z.unknown())),
+    edges: z.array(z.record(z.string(), z.unknown())),
+  }).optional(),
 });
 
 // POST /api/workflows/[id]/execute
@@ -31,7 +35,7 @@ export async function POST(req: Request, ctx: RouteContext) {
     if (workflow.userId !== user.id) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
     const body: unknown = await req.json();
-    const { scope, selectedNodeIds } = executeSchema.parse(body);
+    const { scope, selectedNodeIds, nodeSnapshot } = executeSchema.parse(body);
 
     const nodes = workflow.nodes as unknown as WorkflowNode[];
     const edges = workflow.edges as unknown as WorkflowEdge[];
@@ -71,6 +75,7 @@ export async function POST(req: Request, ctx: RouteContext) {
       userId: user.id,
       scope,
       selectedNodeIds,
+      nodeSnapshot,
     };
 
     let triggerRunId: string | undefined;

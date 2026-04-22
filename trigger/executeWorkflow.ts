@@ -27,7 +27,7 @@ export const executeWorkflowTask = task({
   id: "execute-workflow",
   maxDuration: 300,
   run: async (payload: WorkflowExecutionTaskPayload): Promise<void> => {
-    const { workflowRunId, workflowId, scope, selectedNodeIds } = payload;
+    const { workflowRunId, workflowId, scope, selectedNodeIds, nodeSnapshot } = payload;
 
     logger.log("Starting workflow execution", { workflowRunId, workflowId, scope });
 
@@ -42,8 +42,13 @@ export const executeWorkflowTask = task({
       const workflow = await prisma.workflow.findUnique({ where: { id: workflowId } });
       if (!workflow) throw new Error(`Workflow ${workflowId} not found`);
 
-      const nodes = workflow.nodes as unknown as WorkflowNode[];
-      const edges = workflow.edges as unknown as WorkflowEdge[];
+      // Prefer the live snapshot passed from the browser — it has the latest uploadedUrl.
+      // Fall back to the DB copy if no snapshot was provided.
+      const nodes = (nodeSnapshot?.nodes ?? workflow.nodes) as unknown as WorkflowNode[];
+      const edges = (nodeSnapshot?.edges ?? workflow.edges) as unknown as WorkflowEdge[];
+      console.log(`[WORKFLOW] Using ${nodeSnapshot ? "LIVE SNAPSHOT" : "DB copy"} for node data`);
+      const uploadNodes = nodes.filter(n => n.type === "upload_image" || n.type === "upload_video");
+      uploadNodes.forEach(n => console.log(`[WORKFLOW] Snapshot upload node:`, { type: n.type, uploadedUrl: (n.data as Record<string, unknown>).uploadedUrl ?? "(EMPTY)" }));
 
       const plan = computeExecutionPlan(
         nodes, edges,
@@ -168,6 +173,7 @@ async function executeNode(
     case "upload_video": {
       const uploadData = node.data as { uploadedUrl?: string };
       const url = uploadData.uploadedUrl ?? "";
+      console.log(`[WORKFLOW] Upload node ${node.type}`, { uploadedUrl: url || "(EMPTY!)" });
       await prisma.nodeRun.update({
         where: { id: nodeRunId },
         data: { status: "SUCCESS", startedAt: new Date(), completedAt: new Date(), durationMs: 0, inputs: toJson(resolvedInputs), outputs: toJson({ url }) },
@@ -180,23 +186,34 @@ async function executeNode(
       const connectedTextObj = resolvedInputs["text__0"] as { text?: string } | string | undefined;
       const connectedText = typeof connectedTextObj === 'string' ? connectedTextObj : connectedTextObj?.text;
 
-      logger.log(`[LLM] Resolved inputs for ${nodeRunId}`, {
-        keys: Object.keys(resolvedInputs),
-        resolvedInputs: JSON.stringify(resolvedInputs).slice(0, 500),
-      });
+      console.log(`[WORKFLOW] LLM Node (${nodeRunId}) is resolving inputs...`);
+      console.log(`[WORKFLOW] All input keys:`, Object.keys(resolvedInputs));
 
-      const imageUrls = Object.entries(resolvedInputs)
-        .filter(([key]) => key.startsWith("image__"))
-        .map(([, val]) => {
-          if (typeof val === "string") return val;
-          // Handle all known output shapes from upstream nodes:
-          // upload_image/video  -> { url: "..." }
-          // crop_image          -> { outputUrl: "...", widthPx, heightPx }
-          // extract_frame       -> { outputUrl: "...", widthPx, heightPx, timestampSeconds }
-          const v = val as { url?: string; outputUrl?: string } | null;
-          return v?.outputUrl ?? v?.url ?? "";
-        })
-        .filter(Boolean);
+      const imageUrls: string[] = [];
+
+      // Loop through ALL inputs to find anything that looks like an image/video URL
+      for (const [key, val] of Object.entries(resolvedInputs)) {
+        let detectedUrl = "";
+
+        if (typeof val === "string" && (val.startsWith("http") || val.startsWith("data:image"))) {
+          detectedUrl = val;
+        } else if (val && typeof val === "object") {
+          const v = val as Record<string, any>;
+          detectedUrl = v.outputUrl || v.url || v.uploadedUrl || "";
+        }
+
+        // If it's a valid URL and the key looks like an image input (or it's from an upload node)
+        if (detectedUrl && (key.startsWith("image__") || key.startsWith("video__") || key.includes("upload"))) {
+          imageUrls.push(detectedUrl);
+          console.log(`[WORKFLOW] Found image/video for LLM:`, { key, url: detectedUrl.slice(0, 50) + "..." });
+        }
+      }
+
+      console.log(`[WORKFLOW] Total imageUrls for Gemini:`, imageUrls.length);
+
+      if (imageUrls.length === 0) {
+        console.warn(`[WORKFLOW] WARNING: No images found! Check your connections.`);
+      }
 
       const validModels = ["gemini-2.0-flash", "gemini-2.5-flash", "gemini-2.5-pro", "gemini-flash-latest"];
       const resolvedModel = validModels.includes(llmData.model as string) ? llmData.model : "gemini-2.5-flash";

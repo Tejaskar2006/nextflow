@@ -92,10 +92,50 @@ export function WorkflowEditorClient({ workflowId }: WorkflowEditorClientProps) 
     store.setIsExecuting(true);
     store.clearExecutionState();
     try {
+      // ── Give the store a moment to "settle" (e.g. Cloudinary re-host finishing)
+      await new Promise(r => setTimeout(r, 500));
+
+      // ── Get the absolutely freshest state for the snapshot
+      const currentState = useWorkflowStore.getState();
+      
+      // DEBUG: Log everything we are about to send
+      const uploadNodes = currentState.nodes.filter(n => n.type === "upload_image" || n.type === "upload_video");
+      console.log("[EXECUTE] Sending snapshot to server:", {
+        nodeCount: currentState.nodes.length,
+        uploadDetails: uploadNodes.map(n => ({
+          type: n.type,
+          url: (n.data as Record<string, any>).uploadedUrl || "(MISSING!)"
+        }))
+      });
+
+      const patchRes = await fetch(`/api/workflows/${workflowId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: currentState.workflowName,
+          nodes: currentState.nodes,
+          edges: currentState.edges,
+          viewport: currentState.viewport,
+        }),
+      });
+      console.log("[EXECUTE] Force-save PATCH status:", patchRes.status);
+      
+      store.setIsDirty(false);
+      store.setLastSavedAt(new Date());
+
       const res = await fetch(`/api/workflows/${workflowId}/execute`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ scope, selectedNodeIds: selectedIds ?? [] }),
+        body: JSON.stringify({
+          scope,
+          selectedNodeIds: selectedIds ?? [],
+          // Pass live node data directly — Trigger.dev task uses this instead of DB.
+          // This guarantees uploadedUrl is always included, no save-timing race.
+          nodeSnapshot: {
+            nodes: currentState.nodes,
+            edges: currentState.edges,
+          },
+        }),
       });
 
       const data = (await res.json()) as {

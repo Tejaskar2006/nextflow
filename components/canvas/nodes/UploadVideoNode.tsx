@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useCallback, useState } from "react";
+import { memo, useCallback, useState, useEffect } from "react";
 import { Handle, Position, type NodeProps } from "@xyflow/react";
 import { BaseNode } from "./BaseNode";
 import { useWorkflowStore } from "@/store/workflowStore";
@@ -12,6 +12,14 @@ export const UploadVideoNode = memo(function UploadVideoNode({ id, data, selecte
   const [uploading, setUploading] = useState(false);
   const [uploadFileName, setUploadFileName] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
+  // Local blob URL for instant preview before upload completes
+  const [localPreviewUrl, setLocalPreviewUrl] = useState<string | null>(null);
+
+  // Clean up blob URL on unmount
+  useEffect(() => {
+    return () => { if (localPreviewUrl) URL.revokeObjectURL(localPreviewUrl); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const outputHandle = encodeHandleId({ portDataType: "video", portIndex: 0 });
 
@@ -20,6 +28,9 @@ export const UploadVideoNode = memo(function UploadVideoNode({ id, data, selecte
       alert("Please select a video file (MP4, MOV, WebM, AVI)");
       return;
     }
+    // ── Instant local preview
+    const blobUrl = URL.createObjectURL(file);
+    setLocalPreviewUrl(blobUrl);
     setUploading(true);
     setUploadFileName(file.name);
     try {
@@ -46,13 +57,35 @@ export const UploadVideoNode = memo(function UploadVideoNode({ id, data, selecte
 
       const upload = result.uploads?.[0];
       if (upload) {
+        // Re-host on Cloudinary so the URL is permanent and publicly accessible
+        let finalUrl = upload.ssl_url;
+        try {
+          console.log("[UPLOAD] Re-hosting video to Cloudinary...", upload.ssl_url);
+          const rehostRes = await fetch("/api/upload/rehost", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ url: upload.ssl_url }),
+          });
+          if (rehostRes.ok) {
+            const rehostData = (await rehostRes.json()) as { url: string };
+            finalUrl = rehostData.url;
+            console.log("[UPLOAD] Cloudinary video URL acquired:", finalUrl);
+          }
+        } catch (rehostErr) {
+          console.error("[UPLOAD] Video re-host failed, using original URL:", rehostErr);
+        }
+
         updateNodeData<UploadVideoNodeType>(id, {
-          uploadedUrl: upload.ssl_url,
+          uploadedUrl: finalUrl,
           uploadedFileName: upload.name,
           uploadedFileSizeBytes: upload.size,
           durationSeconds: upload.meta?.duration,
           assemblyId: result.assembly_id,
         });
+        console.log("[UPLOAD] Zustand store updated with video URL:", finalUrl);
+        // Remote URL is now saved — revoke local blob immediately
+        URL.revokeObjectURL(blobUrl);
+        setLocalPreviewUrl(null);
       }
     } catch (err) {
       console.error("Upload failed", err);
@@ -89,67 +122,101 @@ export const UploadVideoNode = memo(function UploadVideoNode({ id, data, selecte
         status={data.status} errorMessage={data.errorMessage}
         selected={selected} minWidth={240}
       >
-        {data.uploadedUrl ? (
-          <div style={{ position: "relative", borderRadius: 10, overflow: "hidden", border: "1px solid rgba(245,158,11,0.2)", height: 110 }}>
-            <video
-              src={data.uploadedUrl}
-              controls
-              style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", background: "#000" }}
-            />
-            
-            {/* Top action button */}
-            <button
-              id={`node-${id}-clear`}
-              onClick={(e) => {
-                e.stopPropagation();
-                updateNodeData<UploadVideoNodeType>(id, { uploadedUrl: undefined, uploadedFileName: undefined });
-              }}
-              style={{
-                position: "absolute", top: 6, right: 6, width: 22, height: 22,
-                borderRadius: "50%", background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)",
-                border: "1px solid rgba(255,255,255,0.2)",
-                color: "#fff", fontSize: 12, cursor: "pointer",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                transition: "all 0.2s", zIndex: 10
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(239,68,68,0.8)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(0,0,0,0.4)"; }}
-            >✕</button>
+        {/* Show preview if we have a remote URL OR a local blob preview during upload */}
+        {(data.uploadedUrl || localPreviewUrl) ? (
+          <div>
+            {/* Video preview */}
+            <div style={{ position: "relative", borderRadius: 10, overflow: "hidden", border: `1px solid ${uploading ? "rgba(245,158,11,0.15)" : "rgba(245,158,11,0.25)"}`, height: 110 }}>
+              <video
+                src={data.uploadedUrl ?? localPreviewUrl ?? ""}
+                controls={!uploading}
+                style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", background: "#000" }}
+              />
+              {/* Top gradient so button is legible */}
+              <div style={{
+                position: "absolute", top: 0, left: 0, right: 0, height: 36,
+                background: "linear-gradient(to bottom, rgba(0,0,0,0.35), transparent)",
+                pointerEvents: "none"
+              }} />
 
-            {/* Bottom Metadata Bar */}
-            <div style={{
-              position: "absolute", bottom: 0, left: 0, right: 0,
-              padding: "4px 8px", background: "rgba(0,0,0,0.5)", backdropFilter: "blur(6px)",
-              display: "flex", justifyContent: "space-between", alignItems: "center",
-              pointerEvents: "none"
-            }}>
-              <span style={{ fontSize: 9, color: "#fff", fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "60%" }}>
-                {data.uploadedFileName || "Uploaded video"}
-              </span>
-              <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                {data.durationSeconds && (
-                  <span style={{ fontSize: 8, color: "#fbbf24", fontWeight: 600, background: "rgba(245,158,11,0.2)", padding: "0px 3px", borderRadius: 3 }}>
-                    {data.durationSeconds.toFixed(1)}s
-                  </span>
-                )}
-                {data.uploadedFileSizeBytes && (
-                  <span style={{ fontSize: 9, color: "rgba(255,255,255,0.7)" }}>
-                    {(data.uploadedFileSizeBytes / (1024 * 1024)).toFixed(1)} MB
-                  </span>
-                )}
-              </div>
+              {/* Uploading overlay */}
+              {uploading && (
+                <div style={{
+                  position: "absolute", inset: 0,
+                  background: "rgba(0,0,0,0.5)", backdropFilter: "blur(2px)",
+                  display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6,
+                  pointerEvents: "none",
+                }}>
+                  <div style={{ fontSize: 18 }}>⏳</div>
+                  <span style={{ fontSize: 10, color: "#fff", fontWeight: 500 }}>Uploading…</span>
+                </div>
+              )}
+
+              {!uploading && (
+                <button
+                  id={`node-${id}-clear`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    updateNodeData<UploadVideoNodeType>(id, { uploadedUrl: undefined, uploadedFileName: undefined });
+                  }}
+                  style={{
+                    position: "absolute", top: 6, right: 6, width: 22, height: 22,
+                    borderRadius: "50%", background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)",
+                    border: "1px solid rgba(255,255,255,0.2)",
+                    color: "#fff", fontSize: 11, cursor: "pointer",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    transition: "all 0.2s", zIndex: 10
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(239,68,68,0.8)"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(0,0,0,0.4)"; }}
+                >✕</button>
+              )}
             </div>
-            
-            {/* Click to re-upload overlay (visible on hover) */}
-            <div 
-              onClick={() => document.getElementById(`node-${id}-file`)?.click()}
-              style={{
-                position: "absolute", inset: 0, cursor: "pointer", zIndex: 5
-              }}
-              title="Click to change video"
-            />
+
+            {/* File info strip */}
+            <div style={{
+              marginTop: 6,
+              display: "flex", alignItems: "center", gap: 7,
+              padding: "5px 8px",
+              background: "rgba(245,158,11,0.07)",
+              border: "1px solid rgba(245,158,11,0.2)",
+              borderRadius: 7,
+            }}>
+              <span style={{ fontSize: 13, lineHeight: 1 }}>🎦</span>
+              <span style={{
+                flex: 1, fontSize: 11, fontWeight: 500,
+                color: "var(--text-primary)",
+                whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+              }}>
+                {uploadFileName ?? data.uploadedFileName ?? "video"}
+              </span>
+              {uploading ? (
+                <span style={{ fontSize: 9, color: "#f59e0b", fontWeight: 600, flexShrink: 0 }}>uploading…</span>
+              ) : (
+                <>
+                  {data.durationSeconds && (
+                    <span style={{
+                      fontSize: 10, color: "#f59e0b", fontWeight: 600,
+                      background: "rgba(245,158,11,0.15)", padding: "1px 5px", borderRadius: 4, flexShrink: 0
+                    }}>
+                      {data.durationSeconds.toFixed(1)}s
+                    </span>
+                  )}
+                  {data.uploadedFileSizeBytes && (
+                    <span style={{
+                      fontSize: 10, color: "var(--text-muted)",
+                      background: "var(--bg-elevated)", padding: "1px 5px", borderRadius: 4, flexShrink: 0
+                    }}>
+                      {(data.uploadedFileSizeBytes / (1024 * 1024)).toFixed(1)} MB
+                    </span>
+                  )}
+                  <span style={{ fontSize: 11, color: "#f59e0b", flexShrink: 0 }}>✓</span>
+                </>
+              )}
+            </div>
           </div>
         ) : (
+          /* Drop zone — only shown when nothing selected */
           <label
             htmlFor={`node-${id}-file`}
             onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
@@ -164,10 +231,9 @@ export const UploadVideoNode = memo(function UploadVideoNode({ id, data, selecte
               transition: "all 0.2s",
             }}
           >
-            {uploading
-              ? <><span style={{ fontSize: 22 }}>⏳</span><span style={{ fontSize: 11, color: "var(--text-muted)" }}>Uploading &apos;{uploadFileName}&apos;…</span></>
-              : <><span style={{ fontSize: 24 }}>🎬</span><span style={{ fontSize: 11, color: "var(--text-muted)" }}>Drop video or click to upload</span><span style={{ fontSize: 10, color: "var(--text-disabled)" }}>MP4, MOV, WebM, AVI</span></>
-            }
+            <span style={{ fontSize: 24 }}>🎦</span>
+            <span style={{ fontSize: 11, color: "var(--text-muted)" }}>Drop video or click to upload</span>
+            <span style={{ fontSize: 10, color: "var(--text-disabled)" }}>MP4, MOV, WebM, AVI</span>
           </label>
         )}
         <input id={`node-${id}-file`} type="file" accept="video/*" style={{ display: "none" }} onChange={onInputChange} />

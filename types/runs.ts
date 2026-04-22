@@ -136,4 +136,10 @@ export interface WorkflowExecutionTaskPayload {
   userId: string;
   scope: ExecutionScope;
   selectedNodeIds: string[];
+  /** Live node/edge snapshot from the browser. When provided, used instead of the DB copy.
+   *  This eliminates the save-timing race: uploadedUrl is always present. */
+  nodeSnapshot?: {
+    nodes: unknown[];
+    edges: unknown[];
+  };
 }

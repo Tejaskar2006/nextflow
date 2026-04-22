@@ -1,9 +1,9 @@
 import crypto from "crypto";
 
-const TRANSLOADIT_KEY = process.env["TRANSLOADIT_KEY"];
+const TRANSLOADIT_KEY = process.env["TRANSLOADIT_KEY"] || process.env["NEXT_PUBLIC_TRANSLOADIT_KEY"];
 const TRANSLOADIT_SECRET = process.env["TRANSLOADIT_SECRET"];
-const TRANSLOADIT_IMAGE_TEMPLATE_ID = process.env["TRANSLOADIT_IMAGE_TEMPLATE_ID"];
-const TRANSLOADIT_VIDEO_TEMPLATE_ID = process.env["TRANSLOADIT_VIDEO_TEMPLATE_ID"];
+const TRANSLOADIT_IMAGE_TEMPLATE_ID = process.env["TRANSLOADIT_IMAGE_TEMPLATE_ID"] || process.env["NEXT_PUBLIC_TRANSLOADIT_IMAGE_TEMPLATE_ID"];
+const TRANSLOADIT_VIDEO_TEMPLATE_ID = process.env["TRANSLOADIT_VIDEO_TEMPLATE_ID"] || process.env["NEXT_PUBLIC_TRANSLOADIT_VIDEO_TEMPLATE_ID"];
 
 function assertEnv(val: string | undefined, name: string): string {
   if (!val) throw new Error(`${name} is not configured. Check .env.local`);

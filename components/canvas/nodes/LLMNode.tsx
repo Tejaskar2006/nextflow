@@ -96,8 +96,10 @@ export const LLMNode = memo(function LLMNode({ id, data, selected }: NodeProps<L
 
         {/* Image inputs indicator */}
         {data.imageInputsConnected && (
-          <div style={{ fontSize: 10, color: "var(--node-image)", background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.2)", borderRadius: 6, padding: "4px 8px", marginBottom: 10 }}>
-            🖼 Image inputs connected (vision mode)
+          <div style={{ marginBottom: 10 }}>
+            <div style={{ fontSize: 10, color: "var(--node-image)", background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.2)", borderRadius: 6, padding: "4px 8px" }}>
+              🖼 Vision mode active
+            </div>
           </div>
         )}
 

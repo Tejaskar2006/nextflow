@@ -28,15 +28,18 @@ export interface GeminiGenerateResult {
  * for the Gemini multimodal API.
  */
 async function urlToInlinePart(imageUrl: string): Promise<Part> {
+  console.log(`[GEMINI] Fetching image from: ${imageUrl}`);
   const response = await fetch(imageUrl);
   if (!response.ok) {
+    console.error(`[GEMINI] Failed to fetch image! Status: ${response.status} ${response.statusText} URL: ${imageUrl}`);
     throw new Error(
       `Failed to fetch image from ${imageUrl}: ${response.statusText}`
     );
   }
-  const contentType = response.headers.get("content-type") ?? "image/jpeg";
+  const contentType = (response.headers.get("content-type") ?? "image/jpeg").split(";")[0]?.trim() ?? "image/jpeg";
   const arrayBuffer = await response.arrayBuffer();
   const base64 = Buffer.from(arrayBuffer).toString("base64");
+  console.log(`[GEMINI] Image fetched OK. mimeType: ${contentType}, size: ${arrayBuffer.byteLength} bytes`);
   return {
     inlineData: {
       mimeType: contentType,
