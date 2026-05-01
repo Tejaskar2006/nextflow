@@ -75,7 +75,7 @@ export const executeWorkflowTask = task({
             continue;
           }
 
-          const resolvedInputs = resultStore.getResolvedInputs(nodeId, edges);
+          const resolvedInputs = resultStore.getResolvedInputs(nodeId, nodes, edges);
 
           const nodeRun = await prisma.nodeRun.create({
             data: {
@@ -183,8 +183,11 @@ async function executeNode(
 
     case "llm": {
       const llmData = node.data as { model?: string; systemPrompt?: string; userMessage?: string };
-      const connectedTextObj = resolvedInputs["text__0"] as { text?: string } | string | undefined;
-      const connectedText = typeof connectedTextObj === 'string' ? connectedTextObj : connectedTextObj?.text;
+      const connectedUserTextObj = resolvedInputs["text__0"] as { text?: string } | string | undefined;
+      const connectedSystemTextObj = resolvedInputs["text__1"] as { text?: string } | string | undefined;
+
+      const connectedUserText = typeof connectedUserTextObj === 'string' ? connectedUserTextObj : connectedUserTextObj?.text;
+      const connectedSystemText = typeof connectedSystemTextObj === 'string' ? connectedSystemTextObj : connectedSystemTextObj?.text;
 
       console.log(`[WORKFLOW] LLM Node (${nodeRunId}) is resolving inputs...`);
       console.log(`[WORKFLOW] All input keys:`, Object.keys(resolvedInputs));
@@ -221,8 +224,8 @@ async function executeNode(
       const llmPayload: LLMTaskPayload = {
         workflowRunId, nodeRunId,
         model: resolvedModel as any,
-        systemPrompt: llmData.systemPrompt ?? "",
-        userMessage: connectedText ?? llmData.userMessage ?? "",
+        systemPrompt: connectedSystemText ?? llmData.systemPrompt ?? "",
+        userMessage: connectedUserText ?? llmData.userMessage ?? "",
         imageUrls,
       };
 

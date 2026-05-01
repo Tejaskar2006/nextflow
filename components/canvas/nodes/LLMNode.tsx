@@ -24,7 +24,8 @@ export const LLMNode = memo(function LLMNode({ id, data, selected }: NodeProps<L
     [id, updateNodeData]
   );
 
-  const textInputHandle = encodeHandleId({ portDataType: "text", portIndex: 0 });
+  const userTextInputHandle = encodeHandleId({ portDataType: "text", portIndex: 0 });
+  const systemTextInputHandle = encodeHandleId({ portDataType: "text", portIndex: 1 });
   const image0Handle = encodeHandleId({ portDataType: "image", portIndex: 0 });
   const image1Handle = encodeHandleId({ portDataType: "image", portIndex: 1 });
   const image2Handle = encodeHandleId({ portDataType: "image", portIndex: 2 });
@@ -32,9 +33,11 @@ export const LLMNode = memo(function LLMNode({ id, data, selected }: NodeProps<L
 
   return (
     <div style={{ position: "relative" }}>
-      {/* Text input handle */}
-      <Handle type="target" position={Position.Left} id={textInputHandle} data-handletype="text"
-        style={{ left: -5, top: "52%", background: "var(--node-text)", border: "2px solid var(--bg-surface)" }} />
+      {/* Text input handles */}
+      <Handle type="target" position={Position.Left} id={userTextInputHandle} data-handletype="text"
+        style={{ left: -5, top: "54%", background: "var(--node-text)", border: "2px solid var(--bg-surface)" }} />
+      <Handle type="target" position={Position.Left} id={systemTextInputHandle} data-handletype="text"
+        style={{ left: -5, top: "36%", background: "var(--node-text)", border: "2px solid var(--bg-surface)" }} />
       {/* Image input handles (3 slots) */}
       <Handle type="target" position={Position.Left} id={image0Handle} data-handletype="image"
         style={{ left: -5, top: "68%", background: "var(--node-image)", border: "2px solid var(--bg-surface)" }} />
@@ -66,15 +69,22 @@ export const LLMNode = memo(function LLMNode({ id, data, selected }: NodeProps<L
         }
       >
         {/* System prompt */}
-        <NodeField label="System Prompt (optional)">
+        <div style={{ marginBottom: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+            <label style={{ fontSize: 10, fontWeight: 600, color: "var(--text-muted)", letterSpacing: "0.5px", textTransform: "uppercase" }}>
+              System Prompt
+            </label>
+            {data.systemPromptConnected && <ConnectedBadge />}
+          </div>
           <NodeTextarea
             id={`node-${id}-system`}
             value={data.systemPrompt}
             onChange={(v) => set("systemPrompt", v)}
-            placeholder="You are a helpful assistant…"
+            placeholder={data.systemPromptConnected ? "Receiving from connected node…" : "You are a helpful assistant…"}
+            disabled={data.systemPromptConnected}
             rows={2}
           />
-        </NodeField>
+        </div>
 
         {/* User message */}
         <div style={{ marginBottom: 10 }}>

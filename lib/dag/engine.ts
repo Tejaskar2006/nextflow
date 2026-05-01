@@ -98,6 +98,7 @@ export function computeExecutionPlan(
 // ────────────────────────────────────────────────────────────
 export function resolveNodeInputs(
   nodeId: string,
+  nodes: WorkflowNode[],
   edges: WorkflowEdge[],
   outputStore: Map<string, unknown>
 ): Record<string, unknown> {
@@ -106,7 +107,23 @@ export function resolveNodeInputs(
 
   for (const edge of incomingEdges) {
     const outputKey = `${edge.source}::output`;
-    const value = outputStore.get(outputKey);
+    let value = outputStore.get(outputKey);
+    
+    // Fallback to node's static data if it wasn't executed in this run
+    if (value === undefined) {
+      const sourceNode = nodes.find(n => n.id === edge.source);
+      if (sourceNode) {
+        // Mock output based on node type
+        if (sourceNode.type === "upload_image" || sourceNode.type === "upload_video") {
+          value = { url: (sourceNode.data as any).uploadedUrl };
+        } else if (sourceNode.type === "text") {
+          value = { text: (sourceNode.data as any).text };
+        } else if (sourceNode.type === "crop_image" || sourceNode.type === "extract_frame") {
+          value = { outputUrl: (sourceNode.data as any).outputUrl };
+        }
+      }
+    }
+
     if (value !== undefined) {
       const inputKey = edge.targetHandle ?? edge.source;
       resolved[inputKey] = value;
@@ -143,8 +160,8 @@ export class ExecutionResultStore {
     return sources.some((src) => this.failedNodes.has(src));
   }
 
-  getResolvedInputs(nodeId: string, edges: WorkflowEdge[]): Record<string, unknown> {
-    return resolveNodeInputs(nodeId, edges, this.store);
+  getResolvedInputs(nodeId: string, nodes: WorkflowNode[], edges: WorkflowEdge[]): Record<string, unknown> {
+    return resolveNodeInputs(nodeId, nodes, edges, this.store);
   }
 
   getAllOutputs(): Record<string, unknown> {

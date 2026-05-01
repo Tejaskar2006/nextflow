@@ -60,6 +60,11 @@ export const ExtractFrameNode = memo(function ExtractFrameNode({ id, data, selec
           </select>
         </NodeField>
 
+        <NodeField label="Output Filename (Optional)">
+          <NodeInput id={`node-${id}-filename`} type="text" value={data.outputFileName || ""}
+            onChange={(v) => set("outputFileName", v)} placeholder="frame-1" />
+        </NodeField>
+
         {/* Output preview */}
         {data.outputUrl && (
           <div style={{ marginTop: 4 }}>

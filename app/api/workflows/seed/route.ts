@@ -10,133 +10,115 @@ export async function POST(req: Request) {
 
     const nodes: WorkflowNode[] = [
       {
-        id: "node_text_desc",
-        type: "text",
-        position: { x: 60, y: 200 },
-        data: {
-          label: "Product Description",
-          text: "Introducing AuraX Pro — a revolutionary AI-powered ergonomic chair that adapts to your posture in real-time.",
-          status: "idle",
-        },
-      },
-      {
-        id: "node_llm_copy",
-        type: "llm",
-        position: { x: 400, y: 100 },
-        data: {
-          label: "Generate Marketing Copy",
-          model: "gemini-2.5-flash",
-          systemPrompt: "You are an expert product marketer. Write punchy, conversion-focused copy.",
-          userMessage: "",
-          userMessageConnected: true,
-          imageInputsConnected: false,
-          status: "idle",
-        },
-      },
-      {
         id: "node_img_upload",
         type: "upload_image",
-        position: { x: 60, y: 420 },
+        position: { x: 50, y: 50 },
         data: {
-          label: "Product Photo",
+          label: "Upload Image",
           status: "idle",
           uploadedUrl: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=1000",
           uploadedFileName: "red-nike-shoe.jpg"
-        },
+        }
       },
       {
         id: "node_crop",
         type: "crop_image",
-        position: { x: 360, y: 380 },
+        position: { x: 350, y: 50 },
         data: {
-          label: "Square Crop (1:1)",
+          label: "Crop Image",
           x: 0, y: 0, width: 512, height: 512,
           imageInputConnected: true,
           status: "idle",
-        },
+        }
       },
       {
-        id: "node_llm_image",
-        type: "llm",
-        position: { x: 660, y: 340 },
+        id: "node_text_1",
+        type: "text",
+        position: { x: 50, y: 250 },
         data: {
-          label: "Analyze Product Image",
+          label: "System Prompt",
+          text: "You are a professional marketing copywriter. Generate a compelling one-paragraph product description.",
+          status: "idle",
+        }
+      },
+      {
+        id: "node_text_2",
+        type: "text",
+        position: { x: 50, y: 400 },
+        data: {
+          label: "Product Details",
+          text: "Product: Wireless Bluetooth Headphones. Features: Noise cancellation, 30-hour battery, foldable design.",
+          status: "idle",
+        }
+      },
+      {
+        id: "node_llm_1",
+        type: "llm",
+        position: { x: 350, y: 250 },
+        data: {
+          label: "LLM Node #1",
           model: "gemini-2.5-flash",
-          systemPrompt: "You are a visual designer. Analyze the product image.",
-          userMessage: "Analyze this image.",
-          userMessageConnected: false,
+          systemPrompt: "",
+          systemPromptConnected: true,
+          userMessage: "",
+          userMessageConnected: true,
           imageInputsConnected: true,
           status: "idle",
-        },
+        }
       },
       {
         id: "node_vid_upload",
         type: "upload_video",
-        position: { x: 60, y: 620 },
+        position: { x: 50, y: 600 },
         data: {
-          label: "Product Video",
+          label: "Upload Video",
           status: "idle",
           uploadedUrl: "https://res.cloudinary.com/demo/video/upload/elephants.mp4",
           uploadedFileName: "demo-elephants.mp4"
-        },
+        }
       },
       {
         id: "node_frame",
         type: "extract_frame",
-        position: { x: 360, y: 580 },
+        position: { x: 350, y: 600 },
         data: {
-          label: "Extract Thumbnail",
+          label: "Extract Frame",
           timeOffsetSeconds: 2,
           outputFormat: "jpg",
           videoInputConnected: true,
           status: "idle",
-        },
+        }
       },
       {
-        id: "node_llm_frame",
-        type: "llm",
-        position: { x: 660, y: 560 },
+        id: "node_text_3",
+        type: "text",
+        position: { x: 650, y: 250 },
         data: {
-          label: "Analyze Video Frame",
+          label: "System Prompt",
+          text: "You are a social media manager. Create a tweet-length marketing post based on the product image and video frame.",
+          status: "idle",
+        }
+      },
+      {
+        id: "node_llm_2",
+        type: "llm",
+        position: { x: 950, y: 400 },
+        data: {
+          label: "Final Marketing Summary",
           model: "gemini-2.5-flash",
-          systemPrompt: "You are a video content strategist.",
-          userMessage: "Analyze this video thumbnail.",
-          userMessageConnected: false,
+          systemPrompt: "",
+          systemPromptConnected: true,
+          userMessage: "",
+          userMessageConnected: true,
           imageInputsConnected: true,
           status: "idle",
-        },
-      },
-      {
-        id: "node_final",
-        type: "text",
-        position: { x: 980, y: 340 },
-        data: {
-          label: "Final Output",
-          text: "",
-          status: "idle",
-          // Add a dummy property to ensure an input handle exists if your TextNode supports it
-        },
-        // Add an input handle for 'text' if your node system supports explicit handle definitions
-        inputs: [
-          {
-            id: encodeHandleId({ portDataType: "text", portIndex: 0 }),
-            type: "text"
-          }
-        ]
-      },
+        }
+      }
     ] as WorkflowNode[];
 
     const edges: WorkflowEdge[] = [
       {
-        id: "edge_1",
-        source: "node_text_desc",
-        target: "node_llm_copy",
-        sourceHandle: encodeHandleId({ portDataType: "text", portIndex: 0 }),
-        targetHandle: encodeHandleId({ portDataType: "text", portIndex: 0 }),
-        type: "custom",
-      },
-      {
-        id: "edge_2",
+        id: "edge_img_crop",
         source: "node_img_upload",
         target: "node_crop",
         sourceHandle: encodeHandleId({ portDataType: "image", portIndex: 0 }),
@@ -144,15 +126,31 @@ export async function POST(req: Request) {
         type: "custom",
       },
       {
-        id: "edge_3",
+        id: "edge_text1_llm1",
+        source: "node_text_1",
+        target: "node_llm_1",
+        sourceHandle: encodeHandleId({ portDataType: "text", portIndex: 0 }),
+        targetHandle: encodeHandleId({ portDataType: "text", portIndex: 1 }),
+        type: "custom",
+      },
+      {
+        id: "edge_text2_llm1",
+        source: "node_text_2",
+        target: "node_llm_1",
+        sourceHandle: encodeHandleId({ portDataType: "text", portIndex: 0 }),
+        targetHandle: encodeHandleId({ portDataType: "text", portIndex: 0 }),
+        type: "custom",
+      },
+      {
+        id: "edge_crop_llm1",
         source: "node_crop",
-        target: "node_llm_image",
+        target: "node_llm_1",
         sourceHandle: encodeHandleId({ portDataType: "image", portIndex: 0 }),
         targetHandle: encodeHandleId({ portDataType: "image", portIndex: 0 }),
         type: "custom",
       },
       {
-        id: "edge_4",
+        id: "edge_vid_frame",
         source: "node_vid_upload",
         target: "node_frame",
         sourceHandle: encodeHandleId({ portDataType: "video", portIndex: 0 }),
@@ -160,28 +158,44 @@ export async function POST(req: Request) {
         type: "custom",
       },
       {
-        id: "edge_5",
-        source: "node_frame",
-        target: "node_llm_frame",
+        id: "edge_text3_llm2",
+        source: "node_text_3",
+        target: "node_llm_2",
+        sourceHandle: encodeHandleId({ portDataType: "text", portIndex: 0 }),
+        targetHandle: encodeHandleId({ portDataType: "text", portIndex: 1 }),
+        type: "custom",
+      },
+      {
+        id: "edge_llm1_llm2",
+        source: "node_llm_1",
+        target: "node_llm_2",
+        sourceHandle: encodeHandleId({ portDataType: "text", portIndex: 0 }),
+        targetHandle: encodeHandleId({ portDataType: "text", portIndex: 0 }),
+        type: "custom",
+      },
+      {
+        id: "edge_crop_llm2",
+        source: "node_crop",
+        target: "node_llm_2",
         sourceHandle: encodeHandleId({ portDataType: "image", portIndex: 0 }),
         targetHandle: encodeHandleId({ portDataType: "image", portIndex: 0 }),
         type: "custom",
       },
       {
-        id: "edge_6",
-        source: "node_llm_copy",
-        target: "node_final",
-        sourceHandle: encodeHandleId({ portDataType: "text", portIndex: 0 }),
-        targetHandle: encodeHandleId({ portDataType: "text", portIndex: 0 }),
+        id: "edge_frame_llm2",
+        source: "node_frame",
+        target: "node_llm_2",
+        sourceHandle: encodeHandleId({ portDataType: "image", portIndex: 0 }),
+        targetHandle: encodeHandleId({ portDataType: "image", portIndex: 1 }),
         type: "custom",
-      },
+      }
     ] as WorkflowEdge[];
 
     const workflow = await prisma.workflow.create({
       data: {
         userId: user.id,
-        name: "CLOUDINARY FIXED: Multimodal Test",
-        description: "FIXED: Tests 3 parallel branches (Text, Image, Video) using reliable Cloudinary hosting and patched FFmpeg binaries.",
+        name: "Product Marketing Kit Generator",
+        description: "Branch A: Image Processing + Copy. Branch B: Video Extraction. Convergence: Final Tweet.",
         nodes: nodes as unknown as object[],
         edges: edges as unknown as object[],
         viewport: { x: 0, y: 0, zoom: 0.85 },

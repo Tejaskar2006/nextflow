@@ -1,0 +1,51 @@
+{
+  "configPath": "D:\\Galaxy.ai\\nextflow\\.trigger\\tmp\\build-GDhxu8\\trigger.config.mjs",
+  "customConditions": [
+  ],
+  "prompts": [
+  ],
+  "queues": [
+  ],
+  "runtime": "node",
+  "runtimeVersion": "22.14.0",
+  "tasks": [
+    {
+      "entryPoint": "D:\\Galaxy.ai\\nextflow\\.trigger\\tmp\\build-GDhxu8\\executeCropImage.mjs",
+      "filePath": "trigger/executeCropImage.ts",
+      "id": "execute-crop-image-node",
+      "maxDuration": 120
+    },
+    {
+      "entryPoint": "D:\\Galaxy.ai\\nextflow\\.trigger\\tmp\\build-GDhxu8\\executeExtractFrame.mjs",
+      "filePath": "trigger/executeExtractFrame.ts",
+      "id": "execute-extract-frame-node",
+      "maxDuration": 120
+    },
+    {
+      "entryPoint": "D:\\Galaxy.ai\\nextflow\\.trigger\\tmp\\build-GDhxu8\\executeLLMNode.mjs",
+      "filePath": "trigger/executeLLMNode.ts",
+      "id": "execute-llm-node",
+      "maxDuration": 120,
+      "retry": {
+        "factor": 2,
+        "maxAttempts": 3,
+        "maxTimeoutInMs": 30000,
+        "minTimeoutInMs": 10000,
+        "randomize": true
+      }
+    },
+    {
+      "entryPoint": "D:\\Galaxy.ai\\nextflow\\.trigger\\tmp\\build-GDhxu8\\executeWorkflow.mjs",
+      "filePath": "trigger/executeWorkflow.ts",
+      "id": "execute-workflow",
+      "maxDuration": 300
+    }
+  ],
+  "timings": {
+    "trigger/executeCropImage.ts": 150.98019999999997,
+    "trigger/executeExtractFrame.ts": 2.421699999999987,
+    "trigger/executeLLMNode.ts": 2.949899999999957,
+    "trigger/executeWorkflow.ts": 1.9420000000000073
+  },
+  "workerEntryPoint": "D:\\Galaxy.ai\\nextflow\\.trigger\\tmp\\build-GDhxu8\\dev-run-worker.mjs"
+}

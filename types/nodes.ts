@@ -72,6 +72,7 @@ export interface LLMNodeData extends Record<string, unknown> {
   systemPrompt: string;
   // Manual user message (disabled if input edge is connected)
   userMessage: string;
+  systemPromptConnected?: boolean;
   // Whether a text input edge is connected
   userMessageConnected: boolean;
   // Whether one or more image edges are connected
@@ -166,7 +167,7 @@ export const NODE_PORT_TYPES: Record<
   text: { inputs: [], outputs: ["text"] },
   upload_image: { inputs: [], outputs: ["image"] },
   upload_video: { inputs: [], outputs: ["video"] },
-  llm: { inputs: ["text", "image"], outputs: ["text"] },
+  llm: { inputs: ["text", "text", "image", "image", "image"], outputs: ["text"] },
   crop_image: { inputs: ["image"], outputs: ["image"] },
   extract_frame: { inputs: ["video"], outputs: ["image"] },
 };

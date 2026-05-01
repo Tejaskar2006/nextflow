@@ -55,6 +55,27 @@
   --sidebar-right: 300px;
 }
 
+[data-theme="light"] {
+  --bg-canvas:     #f8fafc;
+  --bg-base:       #ffffff;
+  --bg-surface:    #ffffff;
+  --bg-elevated:   #f1f5f9;
+  --bg-overlay:    #e2e8f0;
+
+  --text-primary:   #0f172a;
+  --text-secondary: #334155;
+  --text-muted:     #64748b;
+  --text-disabled:  #94a3b8;
+
+  --border-subtle:  rgba(0, 0, 0, 0.08);
+  --border-default: rgba(0, 0, 0, 0.12);
+  --border-strong:  rgba(0, 0, 0, 0.20);
+  --border-purple:  rgba(124, 58, 237, 0.4);
+
+  --purple-glow:   rgba(124, 58, 237, 0.2);
+  --purple-glow-sm: rgba(124, 58, 237, 0.1);
+}
+
 /* ============================================================
    GOOGLE FONTS (loaded via @font-face via CSS layer after tokens)
    ============================================================ */

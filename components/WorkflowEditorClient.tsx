@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useCallback, useRef } from "react";
+import { useEffect, useCallback, useRef, useState } from "react";
 import { UserButton } from "@clerk/nextjs";
 import { useWorkflowStore } from "@/store/workflowStore";
 import { LeftSidebar } from "@/components/sidebar/LeftSidebar";
@@ -20,6 +20,7 @@ interface WorkflowEditorClientProps {
 }
 
 export function WorkflowEditorClient({ workflowId }: WorkflowEditorClientProps) {
+  const [theme, setTheme] = useState<"dark" | "light">("dark");
   const {
     workflowName, setWorkflow, setWorkflowName,
     isDirty, isSaving, setIsSaving, setIsDirty, setLastSavedAt,
@@ -86,6 +87,41 @@ export function WorkflowEditorClient({ workflowId }: WorkflowEditorClientProps) 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [canUndo, canRedo, undo, redo]);
+
+  const toggleTheme = useCallback(() => {
+    const newTheme = theme === "dark" ? "light" : "dark";
+    setTheme(newTheme);
+    document.body.setAttribute("data-theme", newTheme);
+  }, [theme]);
+
+  const handleExport = useCallback(() => {
+    const store = useWorkflowStore.getState();
+    const dataStr = JSON.stringify({ nodes: store.nodes, edges: store.edges, viewport: store.viewport }, null, 2);
+    const dataUri = "data:application/json;charset=utf-8," + encodeURIComponent(dataStr);
+    const linkElement = document.createElement("a");
+    linkElement.setAttribute("href", dataUri);
+    linkElement.setAttribute("download", `${store.workflowName.replace(/\s+/g, '_')}.json`);
+    linkElement.click();
+  }, []);
+
+  const handleImport = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const parsed = JSON.parse(event.target?.result as string);
+        if (parsed.nodes && parsed.edges) {
+          setWorkflow(workflowId, workflowName, parsed.nodes, parsed.edges, parsed.viewport || { x: 0, y: 0, zoom: 1 });
+          setIsDirty(true);
+        }
+      } catch (err) {
+        alert("Invalid workflow JSON file");
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = ""; // Reset input
+  }, [workflowId, workflowName, setWorkflow, setIsDirty]);
 
   const handleExecute = useCallback(async (scope: "FULL" | "SELECTED", selectedIds?: string[]) => {
     const store = useWorkflowStore.getState();
@@ -199,14 +235,23 @@ export function WorkflowEditorClient({ workflowId }: WorkflowEditorClientProps) 
 
         {/* Center: undo/redo + status */}
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <button id="undo-btn" onClick={undo} disabled={!canUndo} title="Undo (Ctrl+Z)" style={iconBtnStyle(!canUndo)}>↩</button>
-          <button id="redo-btn" onClick={redo} disabled={!canRedo} title="Redo (Ctrl+Y)" style={iconBtnStyle(!canRedo)}>↪</button>
+          <button onClick={handleExport} title="Export Workflow" style={{ ...iconBtnStyle(false), fontSize: 16 }}>↓</button>
+          <label title="Import Workflow" style={{ ...iconBtnStyle(false), cursor: "pointer", margin: 0, fontSize: 16 }}>
+            <input type="file" accept=".json" onChange={handleImport} style={{ display: "none" }} />
+            ↑
+          </label>
+          <div style={{ width: 1, height: 20, background: "var(--border-subtle)", margin: "0 4px" }} />
+          <button id="undo-btn" onClick={undo} disabled={!canUndo} title="Undo (Ctrl+Z)" style={{ ...iconBtnStyle(!canUndo), fontSize: 16 }}>↩</button>
+          <button id="redo-btn" onClick={redo} disabled={!canRedo} title="Redo (Ctrl+Y)" style={{ ...iconBtnStyle(!canRedo), fontSize: 16 }}>↪</button>
           <div style={{ width: 1, height: 20, background: "var(--border-subtle)", margin: "0 4px" }} />
           <SaveStatus isSaving={isSaving} isDirty={isDirty} />
         </div>
 
         {/* Right: run + user */}
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <button onClick={toggleTheme} title="Toggle Theme" style={{ ...iconBtnStyle(false), fontSize: 16 }}>
+            {theme === "dark" ? "☼" : "☾"}
+          </button>
           <button
             id="run-workflow-btn"
             onClick={() => void handleExecute("FULL")}
