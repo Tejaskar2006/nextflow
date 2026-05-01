@@ -298,8 +298,10 @@ async function executeNode(node, nodeRunId, workflowRunId, resolvedInputs) {
     }
     case "llm": {
       const llmData = node.data;
-      const connectedTextObj = resolvedInputs["text__0"];
-      const connectedText = typeof connectedTextObj === "string" ? connectedTextObj : connectedTextObj?.text;
+      const connectedUserTextObj = resolvedInputs["text__0"];
+      const connectedSystemTextObj = resolvedInputs["text__1"];
+      const connectedUserText = typeof connectedUserTextObj === "string" ? connectedUserTextObj : connectedUserTextObj?.text;
+      const connectedSystemText = typeof connectedSystemTextObj === "string" ? connectedSystemTextObj : connectedSystemTextObj?.text;
       console.log(`[WORKFLOW] LLM Node (${nodeRunId}) is resolving inputs...`);
       console.log(`[WORKFLOW] All input keys:`, Object.keys(resolvedInputs));
       const imageUrls = [];
@@ -326,8 +328,8 @@ async function executeNode(node, nodeRunId, workflowRunId, resolvedInputs) {
         workflowRunId,
         nodeRunId,
         model: resolvedModel,
-        systemPrompt: llmData.systemPrompt ?? "",
-        userMessage: connectedText ?? llmData.userMessage ?? "",
+        systemPrompt: connectedSystemText ?? llmData.systemPrompt ?? "",
+        userMessage: connectedUserText ?? llmData.userMessage ?? "",
         imageUrls
       };
       await prisma.nodeRun.update({

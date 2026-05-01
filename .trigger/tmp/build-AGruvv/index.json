@@ -1,5 +1,5 @@
 {
-  "configPath": "D:\\Galaxy.ai\\nextflow\\.trigger\\tmp\\build-GDhxu8\\trigger.config.mjs",
+  "configPath": "D:\\Galaxy.ai\\nextflow\\.trigger\\tmp\\build-AGruvv\\trigger.config.mjs",
   "customConditions": [
   ],
   "prompts": [
@@ -10,19 +10,19 @@
   "runtimeVersion": "22.14.0",
   "tasks": [
     {
-      "entryPoint": "D:\\Galaxy.ai\\nextflow\\.trigger\\tmp\\build-GDhxu8\\executeCropImage.mjs",
+      "entryPoint": "D:\\Galaxy.ai\\nextflow\\.trigger\\tmp\\build-AGruvv\\executeCropImage.mjs",
       "filePath": "trigger/executeCropImage.ts",
       "id": "execute-crop-image-node",
       "maxDuration": 120
     },
     {
-      "entryPoint": "D:\\Galaxy.ai\\nextflow\\.trigger\\tmp\\build-GDhxu8\\executeExtractFrame.mjs",
+      "entryPoint": "D:\\Galaxy.ai\\nextflow\\.trigger\\tmp\\build-AGruvv\\executeExtractFrame.mjs",
       "filePath": "trigger/executeExtractFrame.ts",
       "id": "execute-extract-frame-node",
       "maxDuration": 120
     },
     {
-      "entryPoint": "D:\\Galaxy.ai\\nextflow\\.trigger\\tmp\\build-GDhxu8\\executeLLMNode.mjs",
+      "entryPoint": "D:\\Galaxy.ai\\nextflow\\.trigger\\tmp\\build-AGruvv\\executeLLMNode.mjs",
       "filePath": "trigger/executeLLMNode.ts",
       "id": "execute-llm-node",
       "maxDuration": 120,
@@ -35,17 +35,17 @@
       }
     },
     {
-      "entryPoint": "D:\\Galaxy.ai\\nextflow\\.trigger\\tmp\\build-GDhxu8\\executeWorkflow.mjs",
+      "entryPoint": "D:\\Galaxy.ai\\nextflow\\.trigger\\tmp\\build-AGruvv\\executeWorkflow.mjs",
       "filePath": "trigger/executeWorkflow.ts",
       "id": "execute-workflow",
       "maxDuration": 300
     }
   ],
   "timings": {
-    "trigger/executeCropImage.ts": 150.98019999999997,
-    "trigger/executeExtractFrame.ts": 2.421699999999987,
-    "trigger/executeLLMNode.ts": 2.949899999999957,
-    "trigger/executeWorkflow.ts": 1.9420000000000073
+    "trigger/executeCropImage.ts": 104.26080000000002,
+    "trigger/executeExtractFrame.ts": 2.0335999999999785,
+    "trigger/executeLLMNode.ts": 2.2520999999999844,
+    "trigger/executeWorkflow.ts": 1.6346999999999525
   },
-  "workerEntryPoint": "D:\\Galaxy.ai\\nextflow\\.trigger\\tmp\\build-GDhxu8\\dev-run-worker.mjs"
+  "workerEntryPoint": "D:\\Galaxy.ai\\nextflow\\.trigger\\tmp\\build-AGruvv\\dev-run-worker.mjs"
 }

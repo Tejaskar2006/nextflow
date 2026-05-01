@@ -125,6 +125,8 @@ export interface ExtractFrameNodeData extends Record<string, unknown> {
   timeOffsetSeconds: number;
   // Output image format
   outputFormat: "jpg" | "png" | "webp";
+  // Custom output filename (optional)
+  outputFileName?: string;
   // Whether video input is connected
   videoInputConnected: boolean;
   outputUrl?: string;
